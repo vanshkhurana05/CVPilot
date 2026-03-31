@@ -15,18 +15,22 @@ function fixFile(file) {
   let content = fs.readFileSync(file, 'utf8')
   // Add .js to relative import/export specifiers that don't have an extension
   // Avoid touching imports from packages (no leading ./ or ../)
-  content = content.replace(/(from\s+['"])(\.\/|\.\.\/)([^'";]+)['"]/g, (m, p1, p2, p3) => {
+  content = content.replace(/(from\s+)(['"])(\.\/|\.\.\/)([^'";]+)\2/g, (m, p1, quote, rel, p3) => {
     // if it already has an extension, leave it
     if (/\.[a-zA-Z0-9]+$/.test(p3)) return m
-    return `${p1}${p2}${p3}.js"`
+    return `${p1}${quote}${rel}${p3}.js${quote}`
   })
   // also handle import\s+"./foo" style
-  content = content.replace(/(import\s+['"])(\.\/|\.\.\/)([^'";]+)['"]/g, (m, p1, p2, p3) => {
+  content = content.replace(/(import\s+)(['"])(\.\/|\.\.\/)([^'";]+)\2/g, (m, p1, quote, rel, p3) => {
     if (/\.[a-zA-Z0-9]+$/.test(p3)) return m
-    return `${p1}${p2}${p3}.js"`
+    return `${p1}${quote}${rel}${p3}.js${quote}`
   })
   fs.writeFileSync(file, content, 'utf8')
 }
 
-if (fs.existsSync(root)) walk(root)
-else console.warn('Prisma dist folder not found, skipping import-fix.')
+if (fs.existsSync(root)) {
+  walk(root)
+} else {
+  console.error('Prisma dist folder not found: dist/generated/prisma')
+  process.exit(1)
+}
