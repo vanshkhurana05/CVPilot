@@ -84,6 +84,14 @@ jobs:
             fi
             pm2 reload cvpilot-backend ||  pm2 start npm --name cvpilot-backend -- start
             pm2 status
+            for i in {1..10}; do
+              if curl -f http://localhost:3000/health; then
+                echo "✅ Server is up"
+                break
+              fi
+              echo "⏳ Waiting for server..."
+              sleep 2
+            done
             curl -f http://localhost:3000/health || exit 1
             cd ..
             echo "Deploying frontend..."
