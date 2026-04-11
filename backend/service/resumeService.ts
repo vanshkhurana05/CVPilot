@@ -1,3 +1,4 @@
+import { Prisma } from "../generated/prisma/client.js";
 import prisma from "../lib/prisma.js";
 
 /**
@@ -49,7 +50,8 @@ export const upsertResume = async (data: UpsertResumeInput) => {
           publicId: data.publicId,
           fileHash: data.fileHash,
           uploadedAt: data.uploadedAt,
-          // parsedData is preserved
+          parsedData: Prisma.JsonNull, // reset on re-upload — new file needs fresh parsing
+          updatedAt: new Date(),
         },
       });
     } catch (error) {
@@ -57,4 +59,30 @@ export const upsertResume = async (data: UpsertResumeInput) => {
       throw new Error("Failed to upsert resume in database");
     }
   };
+
+/**
+ * Update only the parsedData field of a resume
+ * Does not modify file hash, URL, or other fields
+ *
+ * @param userId - User ID
+ * @param parsedData - Parsed resume data to store (can be null)
+ * @returns Updated Resume record or throws error
+ */
+export const updateResumeParsedData = async (
+  userId: string,
+  parsedData: any
+) => {
+  try {
+    return await prisma.resume.update({
+      where: { userId },
+      data: {
+        parsedData,
+        updatedAt: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error("DB error updating parsedData:", error);
+    throw new Error("Failed to update resume parsed data in database");
+  }
+};
 
